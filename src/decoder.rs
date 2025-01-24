@@ -330,7 +330,12 @@ impl<R: Read> Decoder<R> {
         loop {
             let marker = match pending_marker.take() {
                 Some(m) => m,
-                None => self.read_marker()?,
+                None => match self.read_marker() {
+                    Ok(v) => v,
+                    // Swallow the error and exit the loop, because we've finished the stream
+                    // See: https://github.com/image-rs/jpeg-decoder/issues/251
+                    Err(_) => break,
+                },
             };
 
             match marker {
